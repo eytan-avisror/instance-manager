@@ -1,4 +1,4 @@
-name: label-check
+name: instance-manager
 on:
   pull_request:
     types:
@@ -27,7 +27,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: docker-build
+      - name: docker-build-push
         uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -35,20 +35,19 @@ jobs:
           repository: keikoproj/instance-manager-test
           tag_with_sha: true
 
-      - name: test
-
+      - name: run-test
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           NODE_SUBNETS: ${{ secrets.NODE_SUBNETS }}
           NODE_ROLE: ${{ secrets.NODE_ROLE }}
+          AWS_REGION: us-west-2
+          AWS_DEFAULT_REGION: us-west-2
+          KEYPAIR_NAME: instancemgr-bdd
+          AMI_ID: ami-076c743acc3ec4159
+          SECURITY_GROUPS: sg-047c3b16e221b6332
         run: |
           HEAD=$(git rev-parse --short HEAD)
-          export SECURITY_GROUPS=$(aws cloudformation describe-stacks --stack-name nightly-eks-node-security-group --query "Stacks[0].Outputs[?OutputKey=='SecurityGroup'].OutputValue" --output text)
-          export AMI_ID=ami-076c743acc3ec4159
-          export AWS_REGION=us-west-2
-          export KEYPAIR_NAME=instancemgr-bdd
-
           aws eks update-kubeconfig --name instancemgr-eks-nightly
           make install
           kubectl set image -n instance-manager deployment/instance-manager instance-manager=keikoproj/instance-manager-test:sha-$HEAD
