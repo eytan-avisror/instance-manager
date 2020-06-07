@@ -1,0 +1,23 @@
+name: commentcheck
+on:
+  pull_request:
+    types:
+      - labeled
+jobs:
+  prcheck:
+    if: github.event.label.name == 'ok-to-test'
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: setup
+          run: |
+            sudo apt update
+            sudo apt install python-pip
+            pip install --user awscli
+            curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            sudo mv ./kubectl $HOME/.local/bin
+            curl -sSL -o $HOME/.local/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 && chmod +x $HOME/.local/bin/jq
+            export PATH=$PATH:$HOME/.local/bin
+            jq --version
+            kubectl
+            aws --version
