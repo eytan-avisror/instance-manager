@@ -1,10 +1,10 @@
-name: commentcheck
+name: label-check
 on:
   pull_request:
     types:
       - labeled
 jobs:
-  prcheck:
+  functional-test:
     if: github.event.label.name == 'ok-to-test'
     runs-on: [ubuntu-latest]
     steps:
