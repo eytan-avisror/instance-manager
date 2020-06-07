@@ -33,9 +33,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: keikoproj/instance-manager-test
-          tag_with_sha: true
+          tags: ${{ github.event.pull_request.head.sha }}
 
       - name: run-test
+        id: test
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -51,5 +52,13 @@ jobs:
           HEAD=$(git rev-parse --short HEAD)
           aws eks update-kubeconfig --name $EKS_CLUSTER
           make install
-          kubectl set image -n instance-manager deployment/instance-manager instance-manager=keikoproj/instance-manager-test:sha-$HEAD
-          make bdd
+          kubectl set image -n instance-manager deployment/instance-manager instance-manager=keikoproj/instance-manager-test:${{ github.event.pull_request.head.sha }}
+          echo "##[set-output name=test_result;]$(make bdd)"
+
+      - name: comment PR
+        uses: unsplash/comment-on-pr@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          msg: ${{ steps.build_package.outputs.test_result }}
+          check_for_duplicate_msg: true
