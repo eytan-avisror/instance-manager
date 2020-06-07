@@ -46,9 +46,10 @@ jobs:
           KEYPAIR_NAME: instancemgr-bdd
           AMI_ID: ami-076c743acc3ec4159
           SECURITY_GROUPS: sg-047c3b16e221b6332
+          EKS_CLUSTER: instancemgr-eks-nightly
         run: |
           HEAD=$(git rev-parse --short HEAD)
-          aws eks update-kubeconfig --name instancemgr-eks-nightly
+          aws eks update-kubeconfig --name $EKS_CLUSTER
           make install
           kubectl set image -n instance-manager deployment/instance-manager instance-manager=keikoproj/instance-manager-test:sha-$HEAD
           make bdd
