@@ -21,3 +21,24 @@ jobs:
           jq --version
           kubectl
           aws --version
+
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: build-push
+        run: |
+          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+          HEAD=$(git rev-parse --short HEAD)
+          IMG=keikoproj/instance-manager:$HEAD
+          make docker-build
+          echo "Pushing tag $HEAD"
+
+      # - name: test
+      #   run: |
+      #     export SECURITY_GROUPS=$(aws cloudformation describe-stacks --stack-name nightly-eks-node-security-group --query "Stacks[0].Outputs[?OutputKey=='SecurityGroup'].OutputValue" --output text)
+      #     aws eks update-kubeconfig --name $EKS_CLUSTER
+      #     make install
+      #     kubectl set image -n instance-manager deployment/instance-manager instance-manager=keikoproj/instance-manager:master
+      #     make bdd
