@@ -1,11 +1,10 @@
 name: instance-manager
 on:
-  pull_request:
-    types:
-      - labeled
+  issue_comment:
+    types: [created, edited, deleted]
 jobs:
   functional-test:
-    if: github.event.label.name == 'ok-to-test'
+    if: contains(github.event.comment.html_url, '/pull/') && contains(github.event.comment.body, '/ok-to-test')
     runs-on: [ubuntu-latest]
     steps:
       - name: setup
@@ -53,12 +52,12 @@ jobs:
           aws eks update-kubeconfig --name $EKS_CLUSTER
           make install
           kubectl set image -n instance-manager deployment/instance-manager instance-manager=keikoproj/instance-manager-test:${{ github.event.pull_request.head.sha }}
-          echo "##[set-output name=test_result;]$(make bdd)"
+          echo "##[set-output name=result;]$(make bdd)"
 
       - name: comment PR
         uses: unsplash/comment-on-pr@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          msg: ${{ steps.build_package.outputs.test_result }}
+          msg: ${{ steps.test.outputs.result }}
           check_for_duplicate_msg: true
