@@ -4,18 +4,9 @@ on:
     types: [created]
 jobs:
   functional-test:
+    if: github.event.issue_comment.body == '/test'
     runs-on: [ubuntu-latest]
     steps:
-      - uses: khan/pull-request-comment-trigger@master
-        id: check
-        with:
-          trigger: '@test'
-          reaction: rocket
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-
-      - run: 'echo Found it!'
-        if: steps.check.outputs.triggered == 'true'
 
       - name: setup
         run: |
