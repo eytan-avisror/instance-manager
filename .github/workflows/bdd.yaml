@@ -1,7 +1,5 @@
 name: instance-manager
 on:
-  pull_request:
-    types: [opened]
   issue_comment:
     types: [created]
 jobs:
@@ -11,7 +9,7 @@ jobs:
       - uses: khan/pull-request-comment-trigger@master
         id: check
         with:
-          trigger: 'ok-to-test'
+          trigger: '@test'
           reaction: rocket
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
