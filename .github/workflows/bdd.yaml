@@ -1,12 +1,24 @@
 name: instance-manager
 on:
+  pull_request:
+    types: [opened]
   issue_comment:
-    types: [created, edited, deleted]
+    types: [created]
 jobs:
   functional-test:
-    if: contains(github.event.comment.html_url, '/pull/') && contains(github.event.comment.body, 'ok-to-test')
     runs-on: [ubuntu-latest]
     steps:
+      - uses: khan/pull-request-comment-trigger@master
+        id: check
+        with:
+          trigger: '@ok-to-test'
+          reaction: rocket
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+      - run: 'echo Found it!'
+        if: steps.check.outputs.triggered == 'true'
+
       - name: setup
         run: |
           sudo apt update
