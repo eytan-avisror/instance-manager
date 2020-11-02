@@ -43,6 +43,7 @@ func (ctx *EksInstanceGroupContext) Create() error {
 		userData        = ctx.GetBasicUserData(clusterName, args, userDataPayload, mounts)
 		sgs             = ctx.ResolveSecurityGroups()
 		spotPrice       = configuration.GetSpotPrice()
+		placement       = configuration.GetPlacement()
 	)
 
 	instanceGroup.SetState(v1alpha1.ReconcileModifying)
@@ -67,16 +68,7 @@ func (ctx *EksInstanceGroupContext) Create() error {
 			UserData:              userData,
 			SpotPrice:             spotPrice,
 			LicenseSpecifications: configuration.LicenseSpecifications,
-			Placement: &scaling.LaunchTemplatePlacementInput{
-				Affinity:             configuration.Placement.Affinity,
-				AvailabilityZone:     configuration.Placement.AvailabilityZone,
-				GroupName:            configuration.Placement.GroupName,
-				HostID:               configuration.Placement.HostID,
-				HostResourceGroupArn: configuration.Placement.HostResourceGroupArn,
-				PartitionNumber:      configuration.Placement.PartitionNumber,
-				SpreadDomain:         configuration.Placement.SpreadDomain,
-				Tenancy:              configuration.Placement.Tenancy,
-			},
+			Placement:             GetLaunchTemplatePlacementInput(placement),
 		}); err != nil {
 			return errors.Wrap(err, "failed to create scaling configuration")
 		}

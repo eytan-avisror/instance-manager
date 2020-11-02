@@ -44,6 +44,7 @@ func (ctx *EksInstanceGroupContext) Update() error {
 		userData        = ctx.GetBasicUserData(clusterName, args, userDataPayload, mounts)
 		sgs             = ctx.ResolveSecurityGroups()
 		spotPrice       = configuration.GetSpotPrice()
+		placement       = configuration.GetPlacement()
 	)
 
 	instanceGroup.SetState(v1alpha1.ReconcileModifying)
@@ -64,6 +65,8 @@ func (ctx *EksInstanceGroupContext) Update() error {
 		Volumes:               configuration.Volumes,
 		UserData:              userData,
 		SpotPrice:             spotPrice,
+		LicenseSpecifications: configuration.LicenseSpecifications,
+		Placement:             GetLaunchTemplatePlacementInput(placement),
 	}
 
 	if spec.IsLaunchConfiguration() {
