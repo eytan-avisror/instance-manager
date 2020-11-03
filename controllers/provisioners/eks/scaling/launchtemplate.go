@@ -178,9 +178,8 @@ func (lt *LaunchTemplate) Delete(input *DeleteConfigurationInput) error {
 
 func (lt *LaunchTemplate) Drifted(input *CreateConfigurationInput) bool {
 	var (
-		latestVersion   = lt.LatestVersion
-		placementConfig *ec2.LaunchTemplatePlacement
-		drift           bool
+		latestVersion = lt.LatestVersion
+		drift         bool
 	)
 
 	if latestVersion == nil {
@@ -204,7 +203,11 @@ func (lt *LaunchTemplate) Drifted(input *CreateConfigurationInput) bool {
 		drift = true
 	}
 
-	if aws.StringValue(latestVersion.LaunchTemplateData.IamInstanceProfile.Arn) != input.IamInstanceProfileArn {
+	currentInstanceProfileArn := ""
+	if latestVersion.LaunchTemplateData.IamInstanceProfile != nil {
+		currentInstanceProfileArn = aws.StringValue(latestVersion.LaunchTemplateData.IamInstanceProfile.Arn)
+	}
+	if currentInstanceProfileArn != input.IamInstanceProfileArn {
 		log.Info("detected drift", "reason", "instance-profile has changed", "instancegroup", lt.OwnerName,
 			"previousValue", aws.StringValue(latestVersion.LaunchTemplateData.IamInstanceProfile.Arn),
 			"newValue", input.IamInstanceProfileArn,
@@ -260,9 +263,8 @@ func (lt *LaunchTemplate) Drifted(input *CreateConfigurationInput) bool {
 		}
 	}
 
-	if input.Placement == nil {
-		placementConfig = &ec2.LaunchTemplatePlacement{}
-	} else {
+	placementConfig := &ec2.LaunchTemplatePlacement{}
+	if input.Placement != nil {
 		placementConfig = &ec2.LaunchTemplatePlacement{
 			AvailabilityZone:     aws.String(input.Placement.AvailabilityZone),
 			HostResourceGroupArn: aws.String(input.Placement.HostResourceGroupArn),
