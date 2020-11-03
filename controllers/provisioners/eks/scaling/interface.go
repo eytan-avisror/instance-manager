@@ -62,12 +62,7 @@ type CreateConfigurationInput struct {
 }
 
 type LaunchTemplatePlacementInput struct {
-	Affinity             string
 	AvailabilityZone     string
-	GroupName            string
-	HostID               string
 	HostResourceGroupArn string
-	PartitionNumber      int64
-	SpreadDomain         string
 	Tenancy              string
 }
