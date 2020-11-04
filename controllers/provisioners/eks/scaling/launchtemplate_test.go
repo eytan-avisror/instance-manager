@@ -421,12 +421,14 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 		},
 	}
 	tests := []struct {
+		name           string
 		launchTemplate *ec2.LaunchTemplate
 		latestVersion  *ec2.LaunchTemplateVersion
 		input          *CreateConfigurationInput
 		shouldDrift    bool
 	}{
 		{
+			name: "NoDriftForEmptyInstanceProfile",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
@@ -444,6 +446,7 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			shouldDrift: false,
 		},
 		{
+			name: "ShouldDriftWhenLatestVersionUnset",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
@@ -454,6 +457,7 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			shouldDrift: true,
 		},
 		{
+			name: "ShouldDriftWhenImageIDChanges",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
@@ -473,6 +477,7 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			shouldDrift: true,
 		},
 		{
+			name: "ShouldDriftWhenInstanceTypeChanges",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
@@ -492,6 +497,7 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			shouldDrift: true,
 		},
 		{
+			name: "ShouldDriftWhenInstanceProfileArnChanges",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
@@ -510,6 +516,7 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			shouldDrift: true,
 		},
 		{
+			name: "ShouldDriftWhenSecurityGroupsChange",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
@@ -527,6 +534,7 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			shouldDrift: true,
 		},
 		{
+			name: "ShouldDriftWhenKeyNameChanges",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
@@ -546,14 +554,12 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			shouldDrift: true,
 		},
 		{
+			name: "ShouldDriftWhenUserDataChanges",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
 			latestVersion: &ec2.LaunchTemplateVersion{
 				LaunchTemplateData: &ec2.ResponseLaunchTemplateData{
-					IamInstanceProfile: &ec2.LaunchTemplateIamInstanceProfileSpecification{
-						Arn: aws.String(""),
-					},
 					SecurityGroupIds: aws.StringSlice([]string{}),
 					UserData:         aws.String("hello"),
 				},
@@ -565,15 +571,12 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			shouldDrift: true,
 		},
 		{
+			name: "ShouldDriftWhenVolumeSizeChanges",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
 			latestVersion: &ec2.LaunchTemplateVersion{
 				LaunchTemplateData: &ec2.ResponseLaunchTemplateData{
-					IamInstanceProfile: &ec2.LaunchTemplateIamInstanceProfileSpecification{
-						Arn: aws.String(""),
-					},
-					SecurityGroupIds: aws.StringSlice([]string{}),
 					BlockDeviceMappings: []*ec2.LaunchTemplateBlockDeviceMapping{
 						{
 							DeviceName: aws.String("/dev/xvda"),
@@ -586,7 +589,6 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 				},
 			},
 			input: &CreateConfigurationInput{
-				SecurityGroups: []string{},
 				Volumes: []v1alpha1.NodeVolume{
 					{
 						Name: "/dev/xvda",
@@ -598,6 +600,7 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			shouldDrift: true,
 		},
 		{
+			name: "NoDriftWhenLicenseSpecificationsSame",
 			launchTemplate: &ec2.LaunchTemplate{
 				LaunchTemplateName: aws.String("my-launch-config"),
 			},
@@ -613,17 +616,84 @@ func TestLaunchTemplateDrifted(t *testing.T) {
 			input: &CreateConfigurationInput{
 				LicenseSpecifications: []string{"arn:aws:license-manager:us-west-2:493203180918:license-configuration:lic-94ba36399bd98eaad808b0ffb1d1604b"},
 			},
+			shouldDrift: false,
+		},
+		{
+			name: "ShouldDriftWhenLicenseSpecificationsChange",
+			launchTemplate: &ec2.LaunchTemplate{
+				LaunchTemplateName: aws.String("my-launch-config"),
+			},
+			latestVersion: &ec2.LaunchTemplateVersion{
+				LaunchTemplateData: &ec2.ResponseLaunchTemplateData{
+					LicenseSpecifications: []*ec2.LaunchTemplateLicenseConfiguration{
+						&ec2.LaunchTemplateLicenseConfiguration{
+							LicenseConfigurationArn: aws.String("arn:aws:license-manager:us-west-2:493203180918:license-configuration:lic-94ba36399bd98eaad808b0ffb1d1604b"),
+						},
+					},
+				},
+			},
+			input: &CreateConfigurationInput{
+				LicenseSpecifications: []string{
+					"arn:aws:license-manager:us-west-2:493203180918:license-configuration:lic-94ba36399bd98eaad808b0ffb1d1604b",
+					"arn:aws:license-manager:us-west-2:493203180918:license-configuration:lic-12123981823091823019823098120398",
+				},
+			},
+			shouldDrift: true,
+		},
+		{
+			name: "ShouldDriftPlacementSpecificationChanges",
+			launchTemplate: &ec2.LaunchTemplate{
+				LaunchTemplateName: aws.String("my-launch-config"),
+			},
+			latestVersion: &ec2.LaunchTemplateVersion{
+				LaunchTemplateData: &ec2.ResponseLaunchTemplateData{
+					Placement: &ec2.LaunchTemplatePlacement{
+						AvailabilityZone:     nil,
+						HostResourceGroupArn: nil,
+						Tenancy:              nil,
+					},
+				},
+			},
+			input: &CreateConfigurationInput{
+				Placement: &LaunchTemplatePlacementInput{
+					AvailabilityZone:     "",
+					HostResourceGroupArn: "arn:aws:resource-groups:us-west-2:493203180918:group/r5-1",
+					Tenancy:              "host",
+				},
+			},
+			shouldDrift: true,
+		},
+		{
+			name: "NoDriftForSamePlacementSpecification",
+			launchTemplate: &ec2.LaunchTemplate{
+				LaunchTemplateName: aws.String("my-launch-config"),
+			},
+			latestVersion: &ec2.LaunchTemplateVersion{
+				LaunchTemplateData: &ec2.ResponseLaunchTemplateData{
+					Placement: &ec2.LaunchTemplatePlacement{
+						HostResourceGroupArn: aws.String("arn:aws:resource-groups:us-west-2:493203180918:group/r5-1"),
+						Tenancy:              aws.String("host"),
+					},
+				},
+			},
+			input: &CreateConfigurationInput{
+				Placement: &LaunchTemplatePlacementInput{
+					HostResourceGroupArn: "arn:aws:resource-groups:us-west-2:493203180918:group/r5-1",
+					Tenancy:              "host",
+				},
+			},
 			shouldDrift: true,
 		},
 	}
 
-	for i, tc := range tests {
-		t.Logf("Test #%v", i)
-		ec2Mock.LaunchTemplates = []*ec2.LaunchTemplate{tc.launchTemplate}
-		lt, err := NewLaunchTemplate("", w, discoveryInput)
-		g.Expect(err).NotTo(gomega.HaveOccurred())
-		lt.LatestVersion = tc.latestVersion
-		result := lt.Drifted(tc.input)
-		g.Expect(result).To(gomega.Equal(tc.shouldDrift))
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ec2Mock.LaunchTemplates = []*ec2.LaunchTemplate{tc.launchTemplate}
+			lt, err := NewLaunchTemplate("", w, discoveryInput)
+			g.Expect(err).NotTo(gomega.HaveOccurred())
+			lt.LatestVersion = tc.latestVersion
+			result := lt.Drifted(tc.input)
+			g.Expect(result).To(gomega.Equal(tc.shouldDrift))
+		})
 	}
 }
