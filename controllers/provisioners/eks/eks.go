@@ -46,12 +46,13 @@ const (
 )
 
 var (
-	RoleNewLabel              = "node.kubernetes.io/role"
-	RoleNewLabelFmt           = "node.kubernetes.io/role=%s"
-	RoleOldLabel              = "node-role.kubernetes.io/%s"
-	RoleOldLabelFmt           = "node-role.kubernetes.io/%s=\"\""
-	InstanceMgrLifecycleLabel = "instancemgr.keikoproj.io/lifecycle"
-	InstanceMgrImageLabel     = "instancemgr.keikoproj.io/image"
+	RoleNewLabel                  = "node.kubernetes.io/role"
+	RoleNewLabelFmt               = "node.kubernetes.io/role=%s"
+	RoleOldLabel                  = "node-role.kubernetes.io/%s"
+	RoleOldLabelFmt               = "node-role.kubernetes.io/%s=\"\""
+	InstanceMgrLifecycleLabel     = "instancemgr.keikoproj.io/lifecycle"
+	InstanceMgrImageLabel         = "instancemgr.keikoproj.io/image"
+	InstanceMgrScalingConfigLabel = "instancemgr.keikoproj.io/scaling-config"
 
 	AllowedOsFamilies         = []string{OsFamilyWindows, OsFamilyBottleRocket, OsFamilyAmazonLinux2}
 	DefaultManagedPolicies    = []string{"AmazonEKSWorkerNodePolicy", "AmazonEC2ContainerRegistryReadOnly"}

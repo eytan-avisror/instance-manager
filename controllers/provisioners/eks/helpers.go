@@ -401,13 +401,15 @@ func (ctx *EksInstanceGroupContext) GetTaintList() []string {
 
 func (ctx *EksInstanceGroupContext) GetComputedLabels() map[string]string {
 	var (
-		isOverride    bool
-		labelMap      = make(map[string]string)
-		instanceGroup = ctx.GetInstanceGroup()
-		status        = instanceGroup.GetStatus()
-		annotations   = instanceGroup.GetAnnotations()
-		configuration = instanceGroup.GetEKSConfiguration()
-		customLabels  = configuration.GetLabels()
+		isOverride        bool
+		scalingConfigName string
+		labelMap          = make(map[string]string)
+		instanceGroup     = ctx.GetInstanceGroup()
+		spec              = instanceGroup.GetEKSSpec()
+		status            = instanceGroup.GetStatus()
+		annotations       = instanceGroup.GetAnnotations()
+		configuration     = instanceGroup.GetEKSConfiguration()
+		customLabels      = configuration.GetLabels()
 	)
 
 	// get custom labels
@@ -449,17 +451,16 @@ func (ctx *EksInstanceGroupContext) GetComputedLabels() map[string]string {
 		}
 	}
 
-	switch status.GetLifecycle() {
-	case v1alpha1.LifecycleStateNormal:
-		labelMap[InstanceMgrLifecycleLabel] = v1alpha1.LifecycleStateNormal
-	case v1alpha1.LifecycleStateSpot:
-		labelMap[InstanceMgrLifecycleLabel] = v1alpha1.LifecycleStateSpot
-	case v1alpha1.LifecycleStateMixed:
-		labelMap[InstanceMgrLifecycleLabel] = v1alpha1.LifecycleStateMixed
+	// additional labels
+	if spec.IsLaunchConfiguration() {
+		scalingConfigName = status.GetActiveLaunchConfigurationName()
+	} else if spec.IsLaunchTemplate() {
+		scalingConfigName = fmt.Sprintf("%v:%v", status.GetActiveLaunchTemplateName(), status.GetLatestTemplateVersion())
 	}
 
+	labelMap[InstanceMgrLifecycleLabel] = status.GetLifecycle()
 	labelMap[InstanceMgrImageLabel] = configuration.GetImage()
-
+	labelMap[InstanceMgrScalingConfigLabel] = scalingConfigName
 	return labelMap
 }
 
